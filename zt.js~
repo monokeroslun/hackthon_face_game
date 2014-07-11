@@ -1,0 +1,296 @@
+//这是一个逗逼的游戏
+var getWidth = function() {
+    return parseFloat(document.documentElement.clientWidth);
+}
+var getHeight = function() {
+    return parseFloat(document.documentElement.clientHeight);
+}
+function Game() {
+    var dropBox = null;
+    //进度条
+    var processBar = null;
+    //计分板
+    var scoreBord = null;
+    //玩家
+    var player = null;
+    //降落区
+    var playYard = null;
+    var box1 = null;
+    var box2 = null;
+    var width = 0;
+    var height = 0;
+    //摄像头
+    var video = null;
+    function init() {
+        background = document.createElement("div");
+        var main = document.getElementById("main");
+        width = getWidth();
+        height = getHeight();
+        main.style.width = width + "px";
+        main.style.height = height +"px";
+        main.appendChild(background);
+        background.id = "background";
+        processBar = ProcessBar();
+        scoreBord = ScoreBord();
+        box1 = faceBox();
+        box2 = Box("box2");
+        player = Player();
+        dropBox = DropBox();
+        var l = [5000,6000,7000,9000];
+        for ( var i in l ) {
+            if ( i%2 == 0 ) {
+                dropBox.cell(-1,l[i]);
+            } else {
+                dropBox.cell(1,l[i]);
+            }
+        }
+        processBar.init(30);
+        processBar.start();
+        background.appendChild(processBar);
+        background.appendChild(scoreBord);
+        background.appendChild(dropBox);
+        background.appendChild(player);
+        background.appendChild(box1);
+        background.appendChild(box2);
+        video = document.createElement("video");
+        video.id = "video";
+        box1.appendChild(video);
+        var localStream = null;
+        // var canvas = document.getElementById("faceCanvas");
+        // var context = canvas.getContext("2d");
+        // context.drawImage(video,0,0);
+        console.log("~~~~");
+        var video_element=document.getElementById('video');
+        console.log(navigator);
+        navigator.webkitGetUserMedia({video:true},
+                                     function(stream) {
+                                         alert("haha");
+                                     },
+                                     function(stream){
+                                         alert("sb");
+                                     });
+    }
+    this.init = init;
+    return this;
+}
+
+function ProcessBar() {
+    var music = document.createElement("audio");
+    music.src = "apple.mp3";
+    var processBar = document.createElement("div");
+    processBar.id = "processBar";
+    var cl1 = "#bce35d";
+    var head = document.createElement("div");
+    head.id = "head";
+    var processBack = document.createElement("div");
+    processBack.id = "processBack";
+    var processBarInner = document.createElement("div");
+    processBarInner.id = "processBarInner";
+    processBarInner.style.background = cl1;
+    processBar.appendChild(head);
+    processBar.appendChild(processBack);
+    processBack.appendChild(processBarInner);
+    var time = 0;
+    function init( t ) {
+        time = t;
+        processBarInner.width = 0;
+    }
+    function start(callback) {
+        // music.play();
+        $(processBarInner).animate({
+            width : "360px"
+        },time,"linear",function() {
+                    if (callback) {
+                        callback();
+                    }
+        });
+    }
+    processBar.init = init;
+    processBar.start = start;
+    return processBar;
+}
+
+function ScoreBord() {
+    var scoreBordDiv = document.createElement("div");
+    var score = 0;
+    function showScore( x ) {
+        if ( x ) {
+            score = x;
+        }
+        var str = ""+score;
+        var t = 6-str.length;
+        for ( var i = 0; i < t; i++ ) {
+            str = "0"+str;
+        }
+        // $(scoreBordDiv).animate({
+        //     innerHTML : str
+        // },100);
+        scoreBordDiv.innerHTML = str;
+    }
+    scoreBordDiv.id = "scoreBord";
+    scoreBordDiv.incScore = function ( x ) {
+        score += x;
+        showScore();
+    };
+    scoreBordDiv.getScore = function () {
+        return score;
+    }
+    scoreBordDiv.incScore(999);
+    scoreBordDiv.incScore(1000);
+    return scoreBordDiv;
+}
+
+function DropBox() {
+    var dropBox = document.createElement("div");
+    dropBox.id = "dropBox";
+    var scoreBox = document.createElement("div");
+    scoreBox.id = "scoreBox";
+    dropBox.appendChild(scoreBox);
+    var dropTime = 4000;
+    var testTime = 2000;
+    var kinds = 4;
+    var name = "pic/fruit";
+    function cell(direction,time,callback) {
+        var pic = document.createElement("div");
+        pic.className = "dropBoxCell";
+        var num = Math.random()*kinds;
+        var num = Math.ceil(num);
+        var src = name+num+".png";
+        pic.style.backgroundImage = "url('"+src+"')";
+        console.log(src);
+        if ( direction === -1 ) {
+            pic.style.left = 0;
+        }
+        if ( direction === 1 ) {
+            pic.style.right = 0;
+        }
+        dropBox.appendChild(pic);
+        $(pic).hide();
+        setTimeout(function() {
+            $(pic).show();
+            var now = 90;
+            pic.style.top = 0;
+            $(pic).animate({
+                top : "100%",
+            },dropTime,function(){
+                if (callback) {
+                    callback();
+                }
+            });
+            setTimeout(function() {
+                console.log(document.getElementById("faceCanvas"));
+                console.log(leftOrRight(document.getElementById("faceCanvas")));
+            },dropTime-testTime);
+            
+        },time);
+
+    }
+    dropBox.cell = cell;
+    return dropBox;
+}
+
+function Player() {
+    var pre = 0.8;
+    var dur = 500;
+    var set = 0;
+    var playerDiv = document.createElement("div");
+    var l = 0;
+    var delta = 40;
+    playerDiv.id = "player";
+    var img = document.createElement("img");
+    img.src = "pic/playerStand.png";
+    img.onload = function() {
+        if ( set === 1 ) {
+            return;
+        }
+        set = 1;
+        img.style.width = $(img).width()*pre;
+        img.style.height = $(img).height()*pre;
+        playerDiv.style.width = $(img).width();
+        l = (getWidth()/2-$(img).width()/2);
+        playerDiv.style.left = l+"px";
+    }
+    function turnLeft() {
+        img.src = "pic/playerLeft.png";
+        playerDiv.style.left = l-delta+"px";
+        setTimeout(function(){
+            img.src = "pic/playerStand.png";
+            playerDiv.style.left = l+"px";
+        },dur);
+    }
+    function turnRight() {
+        img.src = "pic/playerRight.png";
+        playerDiv.style.left = l+delta+"px";
+        setTimeout(function(){
+            img.src = "pic/playerStand.png";
+            playerDiv.style.left = l+"px";
+        },dur);
+    }
+    function miss() {
+        img.src = "pic/playerSad.png";
+        playerDiv.style.left = l+"px";
+        setTimeout(function(){
+            img.src = "pic/playerStand.png";
+            playerDiv.style.left = l+"px";
+        },dur);
+    }
+    $(playerDiv).on("click",function(){
+        miss();
+    });
+    img.style.height = "40%";
+    playerDiv.appendChild(img);
+    return playerDiv;
+}
+function faceBox() {
+    var faceBox = document.createElement("div");
+    faceBox.id = "faceBox";
+    var canvas  = document.createElement("canvas");
+    canvas.id = "faceCanvas";
+    faceBox.appendChild(canvas);
+    return faceBox;
+}
+function Box(id) {
+    var boxDiv = document.createElement("div");
+    boxDiv.id = id;
+    return boxDiv;
+}
+
+
+
+function main () {
+    var game = Game();
+    console.log(game);
+    game.init();
+}
+
+function leftOrRight(canvas,callback) {
+    var api_key = "e2120ceb156841b3faf183b2772d2e07";
+    var api_secret = "ETlUVLLzCUmZNwMSdeS6jMb4fOynm_2h";
+    canvas.toBlob(function(blob) {
+        var api = new FacePP(api_key, api_secret);
+        api.request('detection/detect', {
+            attribute: "pose",
+            img: blob
+        }, function(err, result, callback) {
+            if (err) {
+                callback(err);
+            } else {
+                console.log(result);
+                // TODO use result
+                var posea = result['face'][0].attribute.pose.roll_angle.value;
+                var posenumber = parseFloat(posea);
+                if (posenumber > 20) {
+                    callback(-1);
+                } else if (posenumber < (-20)) {
+                    callback(1);
+                }
+            }
+        });
+    }, 'image/jpeg');
+
+}
+
+window.onload = function () {
+    main();
+}
+
